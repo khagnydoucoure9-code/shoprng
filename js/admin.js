@@ -1,30 +1,39 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET } from "./config.js";
+
 const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const sizes = ["S","M","L","XL","XXL"];
-let products = [], categories = [], currentImages = [];
+const sizes = ["S", "M", "L", "XL", "XXL"];
+let products = [];
+let categories = [];
+let currentImages = [];
 
-const $ = s => document.querySelector(s);
+const $ = (s) => document.querySelector(s);
 
-const esc = (v="") =>
-String(v).replace(/[&<>"']/g, c => ({
-'&':'&',
-'<':'<',
-'>':'>',
-'"':'"',
-"'":'''
+const esc = (v = "") =>
+String(v).replace(/[&<>"']/g, (c) => ({
+"&": "&",
+"<": "<",
+">": ">",
+'"': """,
+"'": "'"
 }[c]));
 
-const toast = msg => {
+const toast = (msg) => {
 const t = $("#toast");
+if (!t) return;
+
 t.textContent = msg;
 t.style.display = "block";
-setTimeout(() => t.style.display = "none", 2200);
+
+setTimeout(() => {
+t.style.display = "none";
+}, 2200);
 };
 
 const isAdmin = async () => {
-const { data:{user} } = await db.auth.getUser();
+const { data: { user } } = await db.auth.getUser();
+
 if (!user) return false;
 
 const { data, error } = await db
@@ -36,37 +45,46 @@ const { data, error } = await db
 return !error && !!data;
 };
 
-async function start(){
-const { data:{session} } = await db.auth.getSession();
+async function start() {
+const { data: { session } } = await db.auth.getSession();
 
-if(session && await isAdmin()) {
+if (session && await isAdmin()) {
 showAdmin(session.user);
 } else {
 showLogin();
 }
 }
 
-function showLogin(){
+function showLogin() {
 $("#loginView").hidden = false;
 $("#adminView").hidden = true;
 }
 
-function showAdmin(user){
+function showAdmin(user) {
 $("#loginView").hidden = true;
 $("#adminView").hidden = false;
 $("#adminEmail").textContent = user.email || "";
+
 loadAll();
 }
 
-async function loadAll(){
-const [c,p] = await Promise.all([
-db.from("categories").select("*").order("sort_order"),
-db.from("products")
-.select("*, categories(name), product_sizes(*)")
-.order("created_at",{ascending:false})
+async function loadAll() {
+const [c, p] = await Promise.all([
+db
+.from("categories")
+.select("*")
+.order("sort_order"),
+
+```
+db
+  .from("products")
+  .select("*, categories(name), product_sizes(*)")
+  .order("created_at", { ascending: false })
+```
+
 ]);
 
-if(c.error || p.error){
+if (c.error || p.error) {
 toast("Erreur de chargement");
 console.error(c.error || p.error);
 return;
@@ -74,110 +92,190 @@ return;
 
 categories = c.data || [];
 products = p.data || [];
+
 render();
 }
 
-function totalStock(p){
+function totalStock(p) {
 return (p.product_sizes || [])
 .filter(s => s.enabled)
-.reduce((n,s) => n + Number(s.quantity || 0), 0);
+.reduce((n, s) => n + Number(s.quantity || 0), 0);
 }
 
-function render(){
-$("#statProducts").textContent = products.filter(p => p.active).length;
-$("#statStock").textContent = products.reduce((n,p) => n + totalStock(p), 0);
-$("#statOut").textContent = products.filter(p => totalStock(p) === 0).length;
-$("#statNew").textContent = products.filter(p => p.is_new).length;
-$("#statFeatured").textContent = products.filter(p => p.is_featured).length;
+function render() {
+$("#statProducts").textContent =
+products.filter(p => p.active).length;
+
+$("#statStock").textContent =
+products.reduce((n, p) => n + totalStock(p), 0);
+
+$("#statOut").textContent =
+products.filter(p => totalStock(p) === 0).length;
+
+$("#statNew").textContent =
+products.filter(p => p.is_new).length;
+
+$("#statFeatured").textContent =
+products.filter(p => p.is_featured).length;
 
 $("#adminCategory").innerHTML =
 '<option value="">Toutes les catégories</option>' +
-categories.map(c =>
-`<option value="${c.id}">${esc(c.name)}</option>`
-).join("");
+categories
+.map(c => `<option value="${c.id}">${esc(c.name)}</option>`)
+.join("");
 
 $("#pCategory").innerHTML =
-categories.map(c =>
-`<option value="${c.id}">${esc(c.name)}</option>`
-).join("");
+categories
+.map(c => `<option value="${c.id}">${esc(c.name)}</option>`)
+.join("");
 
 const q = $("#adminSearch").value.toLowerCase();
 const cat = $("#adminCategory").value;
 const stock = $("#adminStock").value;
 
 const list = products.filter(p =>
-(!q || [p.name,p.description,p.categories?.name]
+(!q ||
+[p.name, p.description, p.categories?.name]
 .join(" ")
 .toLowerCase()
 .includes(q)) &&
 (!cat || p.category_id === cat) &&
-(!stock || (stock === "in"
+(!stock ||
+(stock === "in"
 ? totalStock(p) > 0
 : totalStock(p) === 0))
 );
 
-$("#adminProducts").innerHTML = list.map(p => `    <tr>       <td><strong>${esc(p.name)}</strong></td>       <td>${Number(p.price).toLocaleString("fr-FR")} 🎾</td>       <td>${esc(p.categories?.name || "—")}</td>       <td>         <div class="stock-mini">
-          ${(p.product_sizes || [])
-            .filter(s => s.enabled)
-            .map(s =>`<span>${s.size}: ${s.quantity}</span>`)
-            .join("") || "—"}         </div>       </td>       <td>
+$("#adminProducts").innerHTML =
+list
+.map(p => ` <tr> <td> <strong>${esc(p.name)}</strong> </td>
+
+```
+      <td>
+        ${Number(p.price).toLocaleString("fr-FR")} 🎾
+      </td>
+
+      <td>
+        ${esc(p.categories?.name || "—")}
+      </td>
+
+      <td>
+        <div class="stock-mini">
+          ${
+            (p.product_sizes || [])
+              .filter(s => s.enabled)
+              .map(s => `<span>${s.size}: ${s.quantity}</span>`)
+              .join("") || "—"
+          }
+        </div>
+      </td>
+
+      <td>
         ${p.active ? "Actif" : "Masqué"}
         ${p.is_new ? " · Nouveau" : ""}
-        ${p.is_featured ? " · ⭐" : ""}       </td>       <td>         <button class="admin-btn" data-edit="${p.id}">
-          Modifier         </button>         <button class="admin-btn danger" data-del="${p.id}">
-          Supprimer         </button>       </td>     </tr>
-  `).join("");
+        ${p.is_featured ? " · ⭐" : ""}
+      </td>
+
+      <td>
+        <button
+          class="admin-btn"
+          data-edit="${p.id}">
+          Modifier
+        </button>
+
+        <button
+          class="admin-btn danger"
+          data-del="${p.id}">
+          Supprimer
+        </button>
+      </td>
+    </tr>
+  `)
+  .join("");
+```
 
 $("#categoryAdminList").innerHTML =
-categories.map(c => `       <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee">         <span>${esc(c.name)}</span>         <button class="admin-btn" data-cat-edit="${c.id}">
-          Modifier         </button>       </div>
-    `).join("");
+categories
+.map(c => ` <div
+       style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee">
 
-document.querySelectorAll("[data-edit]")
-.forEach(b => b.onclick = () => openProduct(b.dataset.edit));
+```
+      <span>${esc(c.name)}</span>
 
-document.querySelectorAll("[data-del]")
-.forEach(b => b.onclick = () => deleteProduct(b.dataset.del));
+      <button
+        class="admin-btn"
+        data-cat-edit="${c.id}">
+        Modifier
+      </button>
 
-document.querySelectorAll("[data-cat-edit]")
-.forEach(b => b.onclick = () => openCategory(b.dataset.catEdit));
+    </div>
+  `)
+  .join("");
+```
+
+document
+.querySelectorAll("[data-edit]")
+.forEach(b => {
+b.onclick = () => openProduct(b.dataset.edit);
+});
+
+document
+.querySelectorAll("[data-del]")
+.forEach(b => {
+b.onclick = () => deleteProduct(b.dataset.del);
+});
+
+document
+.querySelectorAll("[data-cat-edit]")
+.forEach(b => {
+b.onclick = () => openCategory(b.dataset.catEdit);
+});
 }
 
 /* =========================
 IMAGES
 ========================= */
 
-function prepareImageInput(){
-
+function prepareImageInput() {
 const input = $("#pImage");
 
-if(!input) return;
+if (!input) return;
 
 input.multiple = true;
-input.accept = "image/jpeg,image/jpg,image/png,image/webp";
+input.accept =
+"image/jpeg,image/jpg,image/png,image/webp";
 
 let preview = $("#imagePreview");
 
-if(!preview){
+if (!preview) {
 preview = document.createElement("div");
 preview.id = "imagePreview";
-preview.style.cssText =
-"display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;";
 
 ```
-input.parentElement.appendChild(preview);
+preview.style.cssText =
+  "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;";
+
+if (input.parentElement) {
+  input.parentElement.appendChild(preview);
+}
 ```
 
 }
 
 input.onchange = () => {
-
-```
 preview.innerHTML = "";
 
+```
 [...input.files].forEach(file => {
 
-  if(!["image/jpeg","image/jpg","image/png","image/webp"].includes(file.type)){
+  if (
+    ![
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp"
+    ].includes(file.type)
+  ) {
     toast("Format image non accepté");
     return;
   }
@@ -185,6 +283,7 @@ preview.innerHTML = "";
   const img = document.createElement("img");
 
   img.src = URL.createObjectURL(file);
+
   img.style.cssText =
     "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;";
 
@@ -195,42 +294,43 @@ preview.innerHTML = "";
 };
 }
 
-async function uploadImage(file,id){
+async function uploadImage(file, id) {
+if (!file) return null;
 
-if(!file) return null;
+const ext =
+file.name.split(".").pop().toLowerCase();
 
-const ext = file.name.split(".").pop().toLowerCase();
-
-if(!["jpg","jpeg","png","webp"].includes(ext)){
+if (!["jpg", "jpeg", "png", "webp"].includes(ext)) {
 throw new Error("Format image non accepté");
 }
 
-const path = `${id}/${crypto.randomUUID()}.${ext}`;
+const path =
+`${id}/${crypto.randomUUID()}.${ext}`;
 
 const { error } = await db.storage
 .from(STORAGE_BUCKET)
-.upload(path,file,{
-upsert:false,
-contentType:file.type
+.upload(path, file, {
+upsert: false,
+contentType: file.type
 });
 
-if(error) throw error;
+if (error) throw error;
 
 return path;
 }
 
-async function saveProductImages(productId, files){
+async function saveProductImages(productId, files) {
+if (!files || !files.length) return;
 
-if(!files || !files.length) return;
-
-const { data:existing, error:existingError } = await db
+const { data: existing, error: existingError } =
+await db
 .from("product_images")
 .select("sort_order")
-.eq("product_id",productId)
-.order("sort_order",{ascending:false})
+.eq("product_id", productId)
+.order("sort_order", { ascending: false })
 .limit(1);
 
-if(existingError) throw existingError;
+if (existingError) throw existingError;
 
 let nextOrder =
 existing && existing.length
@@ -239,11 +339,11 @@ existing && existing.length
 
 const rows = [];
 
-for(const file of files){
+for (const file of files) {
+const path =
+await uploadImage(file, productId);
 
 ```
-const path = await uploadImage(file,productId);
-
 rows.push({
   product_id: productId,
   image_path: path,
@@ -253,28 +353,28 @@ rows.push({
 
 }
 
-if(rows.length){
+if (rows.length) {
+const { error } =
+await db
+.from("product_images")
+.insert(rows);
 
 ```
-const { error } = await db
-  .from("product_images")
-  .insert(rows);
-
-if(error) throw error;
+if (error) throw error;
 ```
 
 }
 }
 
-async function loadProductImages(productId){
-
-const { data,error } = await db
+async function loadProductImages(productId) {
+const { data, error } =
+await db
 .from("product_images")
 .select("*")
-.eq("product_id",productId)
+.eq("product_id", productId)
 .order("sort_order");
 
-if(error){
+if (error) {
 console.error(error);
 return [];
 }
@@ -282,22 +382,24 @@ return [];
 return data || [];
 }
 
-function showExistingImages(images){
-
+function showExistingImages(images) {
 const input = $("#pImage");
 
-if(!input) return;
+if (!input) return;
 
 let preview = $("#imagePreview");
 
-if(!preview){
+if (!preview) {
 preview = document.createElement("div");
 preview.id = "imagePreview";
-preview.style.cssText =
-"display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;";
 
 ```
-input.parentElement.appendChild(preview);
+preview.style.cssText =
+  "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;";
+
+if (input.parentElement) {
+  input.parentElement.appendChild(preview);
+}
 ```
 
 }
@@ -305,18 +407,21 @@ input.parentElement.appendChild(preview);
 preview.innerHTML = "";
 
 images.forEach(image => {
+const wrap = document.createElement("div");
 
 ```
-const wrap = document.createElement("div");
 wrap.style.position = "relative";
 
-const img = document.createElement("img");
+const img =
+  document.createElement("img");
 
-const { data } = db.storage
-  .from(STORAGE_BUCKET)
-  .getPublicUrl(image.image_path);
+const { data } =
+  db.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(image.image_path);
 
 img.src = data.publicUrl;
+
 img.style.cssText =
   "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;";
 
@@ -331,10 +436,10 @@ preview.appendChild(wrap);
 PRODUIT
 ========================= */
 
-function resetForm(){
-
+function resetForm() {
 $("#productId").value = "";
-$("#modalTitle").textContent = "Ajouter un produit";
+$("#modalTitle").textContent =
+"Ajouter un produit";
 
 $("#pName").value = "";
 $("#pPrice").value = "";
@@ -347,57 +452,93 @@ $("#pFeatured").checked = false;
 
 currentImages = [];
 
-const preview = $("#imagePreview");
-if(preview) preview.innerHTML = "";
+const preview =
+$("#imagePreview");
+
+if (preview) {
+preview.innerHTML = "";
+}
 
 $("#sizeInputs").innerHTML =
-sizes.map(s => `       <label style="font-size:.7rem">         <span>           <input type="checkbox" data-enabled="${s}">
-          ${s}         </span>         <input
-          type="number"
-          min="0"
-          value="0"
-          data-qty="${s}">       </label>
-    `).join("");
+sizes
+.map(s => ` <label style="font-size:.7rem">
+
+```
+      <span>
+        <input
+          type="checkbox"
+          data-enabled="${s}">
+        ${s}
+      </span>
+
+      <input
+        type="number"
+        min="0"
+        value="0"
+        data-qty="${s}">
+
+    </label>
+  `)
+  .join("");
+```
 
 prepareImageInput();
 }
 
-async function openProduct(id=null){
-
+async function openProduct(id = null) {
 resetForm();
 
-if(id){
+if (id) {
+const p =
+products.find(x => x.id === id);
 
 ```
-const p = products.find(x => x.id === id);
+if (!p) return;
 
-if(!p) return;
+$("#modalTitle").textContent =
+  "Modifier le produit";
 
-$("#modalTitle").textContent = "Modifier le produit";
 $("#productId").value = p.id;
 $("#pName").value = p.name;
 $("#pPrice").value = p.price;
-$("#pDescription").value = p.description || "";
+$("#pDescription").value =
+  p.description || "";
 
-$("#pCategory").value = p.category_id;
-$("#pActive").checked = p.active;
-$("#pNew").checked = p.is_new;
-$("#pFeatured").checked = p.is_featured;
+$("#pCategory").value =
+  p.category_id;
 
-for(const s of (p.product_sizes || [])){
+$("#pActive").checked =
+  p.active;
 
-  const en = $(`[data-enabled="${s.size}"]`);
-  const q = $(`[data-qty="${s.size}"]`);
+$("#pNew").checked =
+  p.is_new;
 
-  if(en){
+$("#pFeatured").checked =
+  p.is_featured;
+
+for (const s of (p.product_sizes || [])) {
+
+  const en =
+    $(`[data-enabled="${s.size}"]`);
+
+  const q =
+    $(`[data-qty="${s.size}"]`);
+
+  if (en) {
     en.checked = s.enabled;
-    q.value = s.quantity;
+
+    if (q) {
+      q.value = s.quantity;
+    }
   }
 }
 
-currentImages = await loadProductImages(id);
+currentImages =
+  await loadProductImages(id);
 
-showExistingImages(currentImages);
+showExistingImages(
+  currentImages
+);
 ```
 
 }
@@ -409,165 +550,213 @@ $("#productModal").showModal();
 ENREGISTREMENT
 ========================= */
 
-$("#productForm").addEventListener("submit",async e => {
-
-e.preventDefault();
-
-try{
+$("#productForm").addEventListener(
+"submit",
+async e => {
 
 ```
-const id =
-  $("#productId").value || crypto.randomUUID();
+e.preventDefault();
 
-const payload = {
-  id,
-  name: $("#pName").value.trim(),
-  price: Number($("#pPrice").value),
-  description: $("#pDescription").value.trim(),
-  category_id: $("#pCategory").value || null,
-  active: $("#pActive").checked,
-  is_new: $("#pNew").checked,
-  is_featured: $("#pFeatured").checked
-};
+try {
 
-const files = [...($("#pImage").files || [])];
+  const isEditing =
+    !!$("#productId").value;
 
-/* Première image = image principale */
-if(files.length){
-  payload.image_path = await uploadImage(files[0],id);
-}
+  const id =
+    $("#productId").value ||
+    crypto.randomUUID();
 
-let error;
+  const payload = {
+    id,
+    name: $("#pName").value.trim(),
+    price: Number($("#pPrice").value),
+    description:
+      $("#pDescription").value.trim(),
+    category_id:
+      $("#pCategory").value || null,
+    active:
+      $("#pActive").checked,
+    is_new:
+      $("#pNew").checked,
+    is_featured:
+      $("#pFeatured").checked
+  };
 
-if($("#productId").value){
-
-  ({error} =
-    await db
-      .from("products")
-      .update(payload)
-      .eq("id",id));
-
-} else {
-
-  ({error} =
-    await db
-      .from("products")
-      .insert(payload));
-}
-
-if(error) throw error;
+  const files =
+    [...($("#pImage").files || [])];
 
 
-/* Stock */
+  /* Première image */
 
-const rows = sizes.map(s => ({
-  product_id:id,
-  size:s,
-  enabled:$(`[data-enabled="${s}"]`).checked,
-  quantity:Math.max(
-    0,
-    Number($(`[data-qty="${s}"]`).value || 0)
-  )
-}));
+  if (files.length) {
+    payload.image_path =
+      await uploadImage(
+        files[0],
+        id
+      );
+  }
 
-({error} =
-  await db
-    .from("product_sizes")
-    .upsert(rows,{
-      onConflict:"product_id,size"
+
+  let error;
+
+
+  /* Produit */
+
+  if (isEditing) {
+
+    ({ error } =
+      await db
+        .from("products")
+        .update(payload)
+        .eq("id", id));
+
+  } else {
+
+    ({ error } =
+      await db
+        .from("products")
+        .insert(payload));
+  }
+
+  if (error) {
+    throw error;
+  }
+
+
+  /* Stock */
+
+  const rows =
+    sizes.map(s => ({
+      product_id: id,
+      size: s,
+      enabled:
+        $(`[data-enabled="${s}"]`).checked,
+      quantity:
+        Math.max(
+          0,
+          Number(
+            $(`[data-qty="${s}"]`).value || 0
+          )
+        )
     }));
 
-if(error) throw error;
+  ({ error } =
+    await db
+      .from("product_sizes")
+      .upsert(rows, {
+        onConflict:
+          "product_id,size"
+      }));
+
+  if (error) {
+    throw error;
+  }
 
 
-/* Images supplémentaires */
+  /* Images supplémentaires */
 
-if(files.length){
+  if (files.length > 1) {
 
-  const additionalFiles = files.slice(1);
+    await saveProductImages(
+      id,
+      files.slice(1)
+    );
+  }
 
-  await saveProductImages(id,additionalFiles);
 
-  /*
-    Si le produit est nouveau, on enregistre aussi
-    la première image dans product_images.
-  */
-  if(!$("#productId").value){
+  /* Première image dans product_images */
 
-    const { error:imageError } =
+  if (
+    files.length &&
+    !isEditing
+  ) {
+
+    const { error: imageError } =
       await db
         .from("product_images")
         .insert({
-          product_id:id,
-          image_path:payload.image_path,
-          sort_order:0
+          product_id: id,
+          image_path:
+            payload.image_path,
+          sort_order: 0
         });
 
-    if(imageError) throw imageError;
+    if (imageError) {
+      throw imageError;
+    }
   }
+
+
+  toast(
+    "Produit enregistré"
+  );
+
+  $("#productModal").close();
+
+  await loadAll();
+
+} catch (err) {
+
+  console.error(err);
+
+  toast(
+    err.message ||
+    "Erreur"
+  );
 }
-
-toast("Produit enregistré");
-
-$("#productModal").close();
-
-await loadAll();
-```
-
-}catch(err){
-
-```
-console.error(err);
-toast(err.message || "Erreur");
 ```
 
 }
-});
+);
 
 /* =========================
 SUPPRESSION
 ========================= */
 
-async function deleteProduct(id){
+async function deleteProduct(id) {
 
-if(!confirm("Supprimer définitivement ce produit ?"))
+if (
+!confirm(
+"Supprimer définitivement ce produit ?"
+)
+) {
 return;
+}
 
-const { data:images } =
+const { data: images } =
 await db
 .from("product_images")
 .select("image_path")
-.eq("product_id",id);
+.eq("product_id", id);
 
-if(images && images.length){
+if (images && images.length) {
 
 ```
-await db
-  .storage
+await db.storage
   .from(STORAGE_BUCKET)
-  .remove(images.map(x => x.image_path));
+  .remove(
+    images.map(
+      x => x.image_path
+    )
+  );
 
 await db
   .from("product_images")
   .delete()
-  .eq("product_id",id);
+  .eq("product_id", id);
 ```
 
 }
 
-const {error} =
+const { error } =
 await db
 .from("products")
 .delete()
-.eq("id",id);
+.eq("id", id);
 
-if(error){
-
-```
+if (error) {
 toast(error.message);
 return;
-```
-
 }
 
 toast("Produit supprimé");
@@ -579,187 +768,220 @@ loadAll();
 BOUTONS
 ========================= */
 
-$("#addProduct").onclick = () => openProduct();
+$("#addProduct").onclick =
+() => openProduct();
 
-$("#cancelModal").onclick = () =>
-$("#productModal").close();
+$("#cancelModal").onclick =
+() => $("#productModal").close();
 
-$("#adminSearch").oninput = render;
-$("#adminCategory").onchange = render;
-$("#adminStock").onchange = render;
+$("#adminSearch").oninput =
+render;
+
+$("#adminCategory").onchange =
+render;
+
+$("#adminStock").onchange =
+render;
 
 /* =========================
 CONNEXION
 ========================= */
 
-$("#loginForm").addEventListener("submit",async e => {
+$("#loginForm").addEventListener(
+"submit",
+async e => {
 
+```
 e.preventDefault();
 
 $("#loginError").textContent = "";
 
-const {data,error} =
-await db.auth.signInWithPassword({
-email:$("#email").value,
-password:$("#password").value
-});
+const { data, error } =
+  await db.auth.signInWithPassword({
+    email:
+      $("#email").value,
+    password:
+      $("#password").value
+  });
 
-if(error){
-
-```
-$("#loginError").textContent = error.message;
-return;
-```
-
+if (error) {
+  $("#loginError").textContent =
+    error.message;
+  return;
 }
 
-if(!(await isAdmin())){
+if (!(await isAdmin())) {
 
-```
-await db.auth.signOut();
+  await db.auth.signOut();
 
-$("#loginError").textContent =
-  "Ce compte n'est pas autorisé à accéder à l'administration.";
+  $("#loginError").textContent =
+    "Ce compte n'est pas autorisé à accéder à l'administration.";
 
-return;
-```
-
+  return;
 }
 
 showAdmin(data.user);
-});
+```
 
-$("#logout").onclick = async () => {
+}
+);
 
+$("#logout").onclick =
+async () => {
+
+```
 await db.auth.signOut();
 
 showLogin();
+```
+
 };
 
 /* =========================
 CATEGORIES
 ========================= */
 
-$("#createCategory").onclick = async () => {
-
-const name = $("#newCategory").value.trim();
-
-if(!name) return;
-
-const {error} =
-await db
-.from("categories")
-.insert({
-name,
-sort_order:categories.length
-});
-
-if(error){
+$("#createCategory").onclick =
+async () => {
 
 ```
-toast(error.message);
-```
+const name =
+  $("#newCategory").value.trim();
+
+if (!name) return;
+
+const { error } =
+  await db
+    .from("categories")
+    .insert({
+      name,
+      sort_order:
+        categories.length
+    });
+
+if (error) {
+
+  toast(error.message);
 
 } else {
 
-```
-$("#newCategory").value = "";
+  $("#newCategory").value = "";
 
-toast("Catégorie ajoutée");
+  toast("Catégorie ajoutée");
 
-loadAll();
-```
-
+  loadAll();
 }
+```
+
 };
 
-function openCategory(id){
+function openCategory(id) {
 
-const c = categories.find(x => x.id === id);
+const c =
+categories.find(
+x => x.id === id
+);
 
-if(!c) return;
+if (!c) return;
 
-$("#categoryId").value = c.id;
-$("#categoryName").value = c.name;
+$("#categoryId").value =
+c.id;
+
+$("#categoryName").value =
+c.name;
 
 $("#categoryModal").showModal();
 }
 
-$("#cancelCategory").onclick = () =>
-$("#categoryModal").close();
+$("#cancelCategory").onclick =
+() => $("#categoryModal").close();
 
-$("#categoryForm").addEventListener("submit",async e => {
+$("#categoryForm").addEventListener(
+"submit",
+async e => {
 
+```
 e.preventDefault();
 
-const {error} =
-await db
-.from("categories")
-.update({
-name:$("#categoryName").value.trim()
-})
-.eq("id",$("#categoryId").value);
+const { error } =
+  await db
+    .from("categories")
+    .update({
+      name:
+        $("#categoryName")
+          .value
+          .trim()
+    })
+    .eq(
+      "id",
+      $("#categoryId").value
+    );
 
-if(error){
+if (error) {
 
-```
-toast(error.message);
-```
+  toast(error.message);
 
 } else {
 
-```
-$("#categoryModal").close();
+  $("#categoryModal").close();
 
-toast("Catégorie modifiée");
+  toast(
+    "Catégorie modifiée"
+  );
 
-loadAll();
+  loadAll();
+}
 ```
 
 }
-});
+);
 
 /* =========================
 REALTIME
 ========================= */
 
 db.channel("admin-live")
+
 .on(
 "postgres_changes",
 {
-event:"*",
-schema:"public",
-table:"products"
+event: "*",
+schema: "public",
+table: "products"
 },
 loadAll
 )
+
 .on(
 "postgres_changes",
 {
-event:"*",
-schema:"public",
-table:"product_sizes"
+event: "*",
+schema: "public",
+table: "product_sizes"
 },
 loadAll
 )
+
 .on(
 "postgres_changes",
 {
-event:"*",
-schema:"public",
-table:"categories"
+event: "*",
+schema: "public",
+table: "categories"
 },
 loadAll
 )
+
 .on(
 "postgres_changes",
 {
-event:"*",
-schema:"public",
-table:"product_images"
+event: "*",
+schema: "public",
+table: "product_images"
 },
 loadAll
 )
+
 .subscribe();
 
 start();
