@@ -4,35 +4,38 @@ const { createClient } = window.supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const sizes = ["S", "M", "L", "XL", "XXL"];
+
 let products = [];
 let categories = [];
-let currentImages = [];
 
 const $ = (s) => document.querySelector(s);
 
-const esc = (v = "") =>
-String(v).replace(/[&<>"']/g, (c) => ({
-"&": "&",
-"<": "<",
-">": ">",
-'"': """,
-"'": "'"
-}[c]));
+function esc(value = "") {
+return String(value)
+.replace(/&/g, "&")
+.replace(/</g, "<")
+.replace(/>/g, ">")
+.replace(/"/g, """)
+.replace(/'/g, "'");
+}
 
-const toast = (msg) => {
-const t = $("#toast");
-if (!t) return;
+function toast(message) {
+const element = $("#toast");
 
-t.textContent = msg;
-t.style.display = "block";
+if (!element) return;
+
+element.textContent = message;
+element.style.display = "block";
 
 setTimeout(() => {
-t.style.display = "none";
+element.style.display = "none";
 }, 2200);
-};
+}
 
-const isAdmin = async () => {
-const { data: { user } } = await db.auth.getUser();
+async function isAdmin() {
+const {
+data: { user }
+} = await db.auth.getUser();
 
 if (!user) return false;
 
@@ -43,10 +46,12 @@ const { data, error } = await db
 .maybeSingle();
 
 return !error && !!data;
-};
+}
 
 async function start() {
-const { data: { session } } = await db.auth.getSession();
+const {
+data: { session }
+} = await db.auth.getSession();
 
 if (session && await isAdmin()) {
 showAdmin(session.user);
@@ -69,372 +74,260 @@ loadAll();
 }
 
 async function loadAll() {
-const [c, p] = await Promise.all([
-db
+const categoriesResult = await db
 .from("categories")
 .select("*")
-.order("sort_order"),
+.order("sort_order");
 
-```
-db
-  .from("products")
-  .select("*, categories(name), product_sizes(*)")
-  .order("created_at", { ascending: false })
-```
+const productsResult = await db
+.from("products")
+.select("*, categories(name), product_sizes(*)")
+.order("created_at", { ascending: false });
 
-]);
-
-if (c.error || p.error) {
+if (categoriesResult.error || productsResult.error) {
 toast("Erreur de chargement");
-console.error(c.error || p.error);
+console.error(
+categoriesResult.error || productsResult.error
+);
 return;
 }
 
-categories = c.data || [];
-products = p.data || [];
+categories = categoriesResult.data || [];
+products = productsResult.data || [];
 
 render();
 }
 
-function totalStock(p) {
-return (p.product_sizes || [])
-.filter(s => s.enabled)
-.reduce((n, s) => n + Number(s.quantity || 0), 0);
+function totalStock(product) {
+return (product.product_sizes || [])
+.filter((size) => size.enabled)
+.reduce(
+(total, size) =>
+total + Number(size.quantity || 0),
+0
+);
 }
 
 function render() {
-$("#statProducts").textContent =
-products.filter(p => p.active).length;
+const statProducts = $("#statProducts");
+const statStock = $("#statStock");
+const statOut = $("#statOut");
+const statNew = $("#statNew");
+const statFeatured = $("#statFeatured");
 
-$("#statStock").textContent =
-products.reduce((n, p) => n + totalStock(p), 0);
+if (statProducts) {
+statProducts.textContent =
+products.filter((p) => p.active).length;
+}
 
-$("#statOut").textContent =
-products.filter(p => totalStock(p) === 0).length;
+if (statStock) {
+statStock.textContent =
+products.reduce(
+(total, product) =>
+total + totalStock(product),
+0
+);
+}
 
-$("#statNew").textContent =
-products.filter(p => p.is_new).length;
+if (statOut) {
+statOut.textContent =
+products.filter(
+(product) => totalStock(product) === 0
+).length;
+}
 
-$("#statFeatured").textContent =
-products.filter(p => p.is_featured).length;
+if (statNew) {
+statNew.textContent =
+products.filter((p) => p.is_new).length;
+}
 
-$("#adminCategory").innerHTML =
+if (statFeatured) {
+statFeatured.textContent =
+products.filter(
+(p) => p.is_featured
+).length;
+}
+
+const adminCategory = $("#adminCategory");
+
+if (adminCategory) {
+adminCategory.innerHTML =
 '<option value="">Toutes les catégories</option>' +
 categories
-.map(c => `<option value="${c.id}">${esc(c.name)}</option>`)
+.map(
+(category) =>
+`<option value="${esc(category.id)}">${esc(category.name)}</option>`
+)
 .join("");
+}
 
-$("#pCategory").innerHTML =
+const productCategory = $("#pCategory");
+
+if (productCategory) {
+productCategory.innerHTML =
 categories
-.map(c => `<option value="${c.id}">${esc(c.name)}</option>`)
+.map(
+(category) =>
+`<option value="${esc(category.id)}">${esc(category.name)}</option>`
+)
 .join("");
+}
 
-const q = $("#adminSearch").value.toLowerCase();
-const cat = $("#adminCategory").value;
-const stock = $("#adminStock").value;
+const searchElement = $("#adminSearch");
+const stockElement = $("#adminStock");
+const categoryElement = $("#adminCategory");
 
-const list = products.filter(p =>
-(!q ||
-[p.name, p.description, p.categories?.name]
+const search = searchElement
+? searchElement.value.toLowerCase()
+: "";
+
+const category = categoryElement
+? categoryElement.value
+: "";
+
+const stock = stockElement
+? stockElement.value
+: "";
+
+const list = products.filter((product) => {
+const text = [
+product.name,
+product.description,
+product.categories?.name
+]
 .join(" ")
-.toLowerCase()
-.includes(q)) &&
-(!cat || p.category_id === cat) &&
-(!stock ||
-(stock === "in"
-? totalStock(p) > 0
-: totalStock(p) === 0))
+.toLowerCase();
+
+```
+const matchesSearch =
+  !search || text.includes(search);
+
+const matchesCategory =
+  !category ||
+  product.category_id === category;
+
+const matchesStock =
+  !stock ||
+  (
+    stock === "in"
+      ? totalStock(product) > 0
+      : totalStock(product) === 0
+  );
+
+return (
+  matchesSearch &&
+  matchesCategory &&
+  matchesStock
 );
+```
 
-$("#adminProducts").innerHTML =
+});
+
+const adminProducts = $("#adminProducts");
+
+if (adminProducts) {
+adminProducts.innerHTML =
 list
-.map(p => ` <tr> <td> <strong>${esc(p.name)}</strong> </td>
+.map(
+(product) => ` <tr> <td> <strong>${esc(product.name)}</strong> </td>
 
 ```
-      <td>
-        ${Number(p.price).toLocaleString("fr-FR")} 🎾
-      </td>
+          <td>
+            ${Number(product.price).toLocaleString("fr-FR")} 🎾
+          </td>
 
-      <td>
-        ${esc(p.categories?.name || "—")}
-      </td>
+          <td>
+            ${esc(product.categories?.name || "—")}
+          </td>
 
-      <td>
-        <div class="stock-mini">
-          ${
-            (p.product_sizes || [])
-              .filter(s => s.enabled)
-              .map(s => `<span>${s.size}: ${s.quantity}</span>`)
-              .join("") || "—"
-          }
-        </div>
-      </td>
+          <td>
+            <div class="stock-mini">
+              ${
+                (product.product_sizes || [])
+                  .filter((size) => size.enabled)
+                  .map(
+                    (size) =>
+                      `<span>${esc(size.size)}: ${Number(size.quantity)}</span>`
+                  )
+                  .join("") || "—"
+              }
+            </div>
+          </td>
 
-      <td>
-        ${p.active ? "Actif" : "Masqué"}
-        ${p.is_new ? " · Nouveau" : ""}
-        ${p.is_featured ? " · ⭐" : ""}
-      </td>
+          <td>
+            ${product.active ? "Actif" : "Masqué"}
+            ${product.is_new ? " · Nouveau" : ""}
+            ${product.is_featured ? " · ⭐" : ""}
+          </td>
 
-      <td>
-        <button
-          class="admin-btn"
-          data-edit="${p.id}">
-          Modifier
-        </button>
+          <td>
+            <button
+              class="admin-btn"
+              data-edit="${esc(product.id)}">
+              Modifier
+            </button>
 
-        <button
-          class="admin-btn danger"
-          data-del="${p.id}">
-          Supprimer
-        </button>
-      </td>
-    </tr>
-  `)
-  .join("");
+            <button
+              class="admin-btn danger"
+              data-del="${esc(product.id)}">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+      `
+    )
+    .join("");
 ```
 
-$("#categoryAdminList").innerHTML =
+}
+
+const categoryList = $("#categoryAdminList");
+
+if (categoryList) {
+categoryList.innerHTML =
 categories
-.map(c => ` <div
-       style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee">
+.map(
+(category) => ` <div
+           style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee">
 
 ```
-      <span>${esc(c.name)}</span>
+          <span>${esc(category.name)}</span>
 
-      <button
-        class="admin-btn"
-        data-cat-edit="${c.id}">
-        Modifier
-      </button>
+          <button
+            class="admin-btn"
+            data-cat-edit="${esc(category.id)}">
+            Modifier
+          </button>
 
-    </div>
-  `)
-  .join("");
+        </div>
+      `
+    )
+    .join("");
 ```
+
+}
 
 document
 .querySelectorAll("[data-edit]")
-.forEach(b => {
-b.onclick = () => openProduct(b.dataset.edit);
+.forEach((button) => {
+button.onclick = () =>
+openProduct(button.dataset.edit);
 });
 
 document
 .querySelectorAll("[data-del]")
-.forEach(b => {
-b.onclick = () => deleteProduct(b.dataset.del);
+.forEach((button) => {
+button.onclick = () =>
+deleteProduct(button.dataset.del);
 });
 
 document
 .querySelectorAll("[data-cat-edit]")
-.forEach(b => {
-b.onclick = () => openCategory(b.dataset.catEdit);
+.forEach((button) => {
+button.onclick = () =>
+openCategory(button.dataset.catEdit);
 });
 }
-
-/* =========================
-IMAGES
-========================= */
-
-function prepareImageInput() {
-const input = $("#pImage");
-
-if (!input) return;
-
-input.multiple = true;
-input.accept =
-"image/jpeg,image/jpg,image/png,image/webp";
-
-let preview = $("#imagePreview");
-
-if (!preview) {
-preview = document.createElement("div");
-preview.id = "imagePreview";
-
-```
-preview.style.cssText =
-  "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;";
-
-if (input.parentElement) {
-  input.parentElement.appendChild(preview);
-}
-```
-
-}
-
-input.onchange = () => {
-preview.innerHTML = "";
-
-```
-[...input.files].forEach(file => {
-
-  if (
-    ![
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp"
-    ].includes(file.type)
-  ) {
-    toast("Format image non accepté");
-    return;
-  }
-
-  const img = document.createElement("img");
-
-  img.src = URL.createObjectURL(file);
-
-  img.style.cssText =
-    "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;";
-
-  preview.appendChild(img);
-});
-```
-
-};
-}
-
-async function uploadImage(file, id) {
-if (!file) return null;
-
-const ext =
-file.name.split(".").pop().toLowerCase();
-
-if (!["jpg", "jpeg", "png", "webp"].includes(ext)) {
-throw new Error("Format image non accepté");
-}
-
-const path =
-`${id}/${crypto.randomUUID()}.${ext}`;
-
-const { error } = await db.storage
-.from(STORAGE_BUCKET)
-.upload(path, file, {
-upsert: false,
-contentType: file.type
-});
-
-if (error) throw error;
-
-return path;
-}
-
-async function saveProductImages(productId, files) {
-if (!files || !files.length) return;
-
-const { data: existing, error: existingError } =
-await db
-.from("product_images")
-.select("sort_order")
-.eq("product_id", productId)
-.order("sort_order", { ascending: false })
-.limit(1);
-
-if (existingError) throw existingError;
-
-let nextOrder =
-existing && existing.length
-? Number(existing[0].sort_order) + 1
-: 0;
-
-const rows = [];
-
-for (const file of files) {
-const path =
-await uploadImage(file, productId);
-
-```
-rows.push({
-  product_id: productId,
-  image_path: path,
-  sort_order: nextOrder++
-});
-```
-
-}
-
-if (rows.length) {
-const { error } =
-await db
-.from("product_images")
-.insert(rows);
-
-```
-if (error) throw error;
-```
-
-}
-}
-
-async function loadProductImages(productId) {
-const { data, error } =
-await db
-.from("product_images")
-.select("*")
-.eq("product_id", productId)
-.order("sort_order");
-
-if (error) {
-console.error(error);
-return [];
-}
-
-return data || [];
-}
-
-function showExistingImages(images) {
-const input = $("#pImage");
-
-if (!input) return;
-
-let preview = $("#imagePreview");
-
-if (!preview) {
-preview = document.createElement("div");
-preview.id = "imagePreview";
-
-```
-preview.style.cssText =
-  "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;";
-
-if (input.parentElement) {
-  input.parentElement.appendChild(preview);
-}
-```
-
-}
-
-preview.innerHTML = "";
-
-images.forEach(image => {
-const wrap = document.createElement("div");
-
-```
-wrap.style.position = "relative";
-
-const img =
-  document.createElement("img");
-
-const { data } =
-  db.storage
-    .from(STORAGE_BUCKET)
-    .getPublicUrl(image.image_path);
-
-img.src = data.publicUrl;
-
-img.style.cssText =
-  "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;";
-
-wrap.appendChild(img);
-preview.appendChild(wrap);
-```
-
-});
-}
-
-/* =========================
-PRODUIT
-========================= */
 
 function resetForm() {
 $("#productId").value = "";
@@ -450,95 +343,93 @@ $("#pActive").checked = true;
 $("#pNew").checked = false;
 $("#pFeatured").checked = false;
 
-currentImages = [];
-
-const preview =
-$("#imagePreview");
-
-if (preview) {
-preview.innerHTML = "";
-}
-
 $("#sizeInputs").innerHTML =
 sizes
-.map(s => ` <label style="font-size:.7rem">
+.map(
+(size) => ` <label style="font-size:.7rem">
 
 ```
-      <span>
+        <span>
+          <input
+            type="checkbox"
+            data-enabled="${size}">
+          ${size}
+        </span>
+
         <input
-          type="checkbox"
-          data-enabled="${s}">
-        ${s}
-      </span>
+          type="number"
+          min="0"
+          value="0"
+          data-qty="${size}">
 
-      <input
-        type="number"
-        min="0"
-        value="0"
-        data-qty="${s}">
-
-    </label>
-  `)
+      </label>
+    `
+  )
   .join("");
 ```
 
-prepareImageInput();
 }
 
 async function openProduct(id = null) {
 resetForm();
 
 if (id) {
-const p =
-products.find(x => x.id === id);
+const product =
+products.find(
+(item) => item.id === id
+);
 
 ```
-if (!p) return;
+if (!product) return;
 
 $("#modalTitle").textContent =
   "Modifier le produit";
 
-$("#productId").value = p.id;
-$("#pName").value = p.name;
-$("#pPrice").value = p.price;
+$("#productId").value =
+  product.id;
+
+$("#pName").value =
+  product.name;
+
+$("#pPrice").value =
+  product.price;
+
 $("#pDescription").value =
-  p.description || "";
+  product.description || "";
 
 $("#pCategory").value =
-  p.category_id;
+  product.category_id || "";
 
 $("#pActive").checked =
-  p.active;
+  !!product.active;
 
 $("#pNew").checked =
-  p.is_new;
+  !!product.is_new;
 
 $("#pFeatured").checked =
-  p.is_featured;
+  !!product.is_featured;
 
-for (const s of (p.product_sizes || [])) {
+for (
+  const size of (
+    product.product_sizes || []
+  )
+) {
+  const enabled =
+    $(`[data-enabled="${size.size}"]`);
 
-  const en =
-    $(`[data-enabled="${s.size}"]`);
+  const quantity =
+    $(`[data-qty="${size.size}"]`);
 
-  const q =
-    $(`[data-qty="${s.size}"]`);
+  if (enabled) {
+    enabled.checked =
+      !!size.enabled;
+  }
 
-  if (en) {
-    en.checked = s.enabled;
-
-    if (q) {
-      q.value = s.quantity;
-    }
+  if (quantity) {
+    quantity.value =
+      Number(size.quantity || 0);
   }
 }
-
-currentImages =
-  await loadProductImages(id);
-
-showExistingImages(
-  currentImages
-);
 ```
 
 }
@@ -546,30 +437,67 @@ showExistingImages(
 $("#productModal").showModal();
 }
 
-/* =========================
-ENREGISTREMENT
-========================= */
+async function uploadImage(file, productId) {
+if (!file) return null;
+
+const extension =
+file.name
+.split(".")
+.pop()
+.toLowerCase();
+
+if (
+![
+"jpg",
+"jpeg",
+"png",
+"webp"
+].includes(extension)
+) {
+throw new Error(
+"Format image non accepté"
+);
+}
+
+const path =
+`${productId}/${crypto.randomUUID()}.${extension}`;
+
+const { error } =
+await db.storage
+.from(STORAGE_BUCKET)
+.upload(
+path,
+file,
+{
+upsert: false,
+contentType: file.type
+}
+);
+
+if (error) {
+throw error;
+}
+
+return path;
+}
 
 $("#productForm").addEventListener(
 "submit",
-async e => {
+async (event) => {
+event.preventDefault();
 
 ```
-e.preventDefault();
-
 try {
-
-  const isEditing =
-    !!$("#productId").value;
-
-  const id =
+  const productId =
     $("#productId").value ||
     crypto.randomUUID();
 
   const payload = {
-    id,
-    name: $("#pName").value.trim(),
-    price: Number($("#pPrice").value),
+    id: productId,
+    name:
+      $("#pName").value.trim(),
+    price:
+      Number($("#pPrice").value),
     description:
       $("#pDescription").value.trim(),
     category_id:
@@ -582,125 +510,79 @@ try {
       $("#pFeatured").checked
   };
 
-  const files =
-    [...($("#pImage").files || [])];
+  const file =
+    $("#pImage").files[0];
 
-
-  /* Première image */
-
-  if (files.length) {
+  if (file) {
     payload.image_path =
       await uploadImage(
-        files[0],
-        id
+        file,
+        productId
       );
   }
 
+  let result;
 
-  let error;
-
-
-  /* Produit */
-
-  if (isEditing) {
-
-    ({ error } =
+  if ($("#productId").value) {
+    result =
       await db
         .from("products")
         .update(payload)
-        .eq("id", id));
-
+        .eq("id", productId);
   } else {
-
-    ({ error } =
+    result =
       await db
         .from("products")
-        .insert(payload));
+        .insert(payload);
   }
 
-  if (error) {
-    throw error;
+  if (result.error) {
+    throw result.error;
   }
 
-
-  /* Stock */
-
-  const rows =
-    sizes.map(s => ({
-      product_id: id,
-      size: s,
+  const stockRows =
+    sizes.map((size) => ({
+      product_id: productId,
+      size,
       enabled:
-        $(`[data-enabled="${s}"]`).checked,
+        $(`[data-enabled="${size}"]`)
+          .checked,
       quantity:
         Math.max(
           0,
           Number(
-            $(`[data-qty="${s}"]`).value || 0
+            $(`[data-qty="${size}"]`)
+              .value || 0
           )
         )
     }));
 
-  ({ error } =
+  const stockResult =
     await db
       .from("product_sizes")
-      .upsert(rows, {
-        onConflict:
-          "product_id,size"
-      }));
+      .upsert(
+        stockRows,
+        {
+          onConflict:
+            "product_id,size"
+        }
+      );
 
-  if (error) {
-    throw error;
+  if (stockResult.error) {
+    throw stockResult.error;
   }
 
-
-  /* Images supplémentaires */
-
-  if (files.length > 1) {
-
-    await saveProductImages(
-      id,
-      files.slice(1)
-    );
-  }
-
-
-  /* Première image dans product_images */
-
-  if (
-    files.length &&
-    !isEditing
-  ) {
-
-    const { error: imageError } =
-      await db
-        .from("product_images")
-        .insert({
-          product_id: id,
-          image_path:
-            payload.image_path,
-          sort_order: 0
-        });
-
-    if (imageError) {
-      throw imageError;
-    }
-  }
-
-
-  toast(
-    "Produit enregistré"
-  );
+  toast("Produit enregistré");
 
   $("#productModal").close();
 
   await loadAll();
 
-} catch (err) {
-
-  console.error(err);
+} catch (error) {
+  console.error(error);
 
   toast(
-    err.message ||
+    error.message ||
     "Erreur"
   );
 }
@@ -709,43 +591,13 @@ try {
 }
 );
 
-/* =========================
-SUPPRESSION
-========================= */
-
 async function deleteProduct(id) {
-
 if (
 !confirm(
 "Supprimer définitivement ce produit ?"
 )
 ) {
 return;
-}
-
-const { data: images } =
-await db
-.from("product_images")
-.select("image_path")
-.eq("product_id", id);
-
-if (images && images.length) {
-
-```
-await db.storage
-  .from(STORAGE_BUCKET)
-  .remove(
-    images.map(
-      x => x.image_path
-    )
-  );
-
-await db
-  .from("product_images")
-  .delete()
-  .eq("product_id", id);
-```
-
 }
 
 const { error } =
@@ -761,12 +613,8 @@ return;
 
 toast("Produit supprimé");
 
-loadAll();
+await loadAll();
 }
-
-/* =========================
-BOUTONS
-========================= */
 
 $("#addProduct").onclick =
 () => openProduct();
@@ -783,20 +631,18 @@ render;
 $("#adminStock").onchange =
 render;
 
-/* =========================
-CONNEXION
-========================= */
-
 $("#loginForm").addEventListener(
 "submit",
-async e => {
+async (event) => {
+event.preventDefault();
 
 ```
-e.preventDefault();
-
 $("#loginError").textContent = "";
 
-const { data, error } =
+const {
+  data,
+  error
+} =
   await db.auth.signInWithPassword({
     email:
       $("#email").value,
@@ -811,7 +657,6 @@ if (error) {
 }
 
 if (!(await isAdmin())) {
-
   await db.auth.signOut();
 
   $("#loginError").textContent =
@@ -828,26 +673,16 @@ showAdmin(data.user);
 
 $("#logout").onclick =
 async () => {
-
-```
 await db.auth.signOut();
-
 showLogin();
-```
-
 };
-
-/* =========================
-CATEGORIES
-========================= */
 
 $("#createCategory").onclick =
 async () => {
+const name =
+$("#newCategory").value.trim();
 
 ```
-const name =
-  $("#newCategory").value.trim();
-
 if (!name) return;
 
 const { error } =
@@ -860,35 +695,32 @@ const { error } =
     });
 
 if (error) {
-
   toast(error.message);
-
-} else {
-
-  $("#newCategory").value = "";
-
-  toast("Catégorie ajoutée");
-
-  loadAll();
+  return;
 }
+
+$("#newCategory").value = "";
+
+toast("Catégorie ajoutée");
+
+await loadAll();
 ```
 
 };
 
 function openCategory(id) {
-
-const c =
+const category =
 categories.find(
-x => x.id === id
+(item) => item.id === id
 );
 
-if (!c) return;
+if (!category) return;
 
 $("#categoryId").value =
-c.id;
+category.id;
 
 $("#categoryName").value =
-c.name;
+category.name;
 
 $("#categoryModal").showModal();
 }
@@ -898,11 +730,10 @@ $("#cancelCategory").onclick =
 
 $("#categoryForm").addEventListener(
 "submit",
-async e => {
+async (event) => {
+event.preventDefault();
 
 ```
-e.preventDefault();
-
 const { error } =
   await db
     .from("categories")
@@ -918,30 +749,21 @@ const { error } =
     );
 
 if (error) {
-
   toast(error.message);
-
-} else {
-
-  $("#categoryModal").close();
-
-  toast(
-    "Catégorie modifiée"
-  );
-
-  loadAll();
+  return;
 }
+
+$("#categoryModal").close();
+
+toast("Catégorie modifiée");
+
+await loadAll();
 ```
 
 }
 );
 
-/* =========================
-REALTIME
-========================= */
-
 db.channel("admin-live")
-
 .on(
 "postgres_changes",
 {
@@ -951,7 +773,6 @@ table: "products"
 },
 loadAll
 )
-
 .on(
 "postgres_changes",
 {
@@ -961,7 +782,6 @@ table: "product_sizes"
 },
 loadAll
 )
-
 .on(
 "postgres_changes",
 {
@@ -971,18 +791,6 @@ table: "categories"
 },
 loadAll
 )
-
-.on(
-"postgres_changes",
-{
-event: "*",
-schema: "public",
-table: "product_images"
-},
-loadAll
-)
-
 .subscribe();
 
 start();
-
