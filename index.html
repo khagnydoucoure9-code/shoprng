@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SHOP — Streetwear • Running">
+  <title>SHOP — Streetwear • Running</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="SHOP">SHOP</a>
+    <button class="menu-toggle" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+    <nav class="main-nav" aria-label="Navigation principale">
+      <a href="#products">Produits</a>
+      <a href="#new">Nouveautés</a>
+      <a href="#categories">Catégories</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="search-trigger" id="searchTrigger" aria-label="Rechercher">⌕</button>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">STREETWEAR • RUNNING</p>
+        <h1>SHOP</h1>
+        <p class="hero-text">Des pièces sélectionnées. Un stock affiché en temps réel.</p>
+        <div class="hero-badges">
+          <span>🇫🇷 Expédition dans toute la France</span>
+          <span>⚡ Stock mis à jour en temps réel</span>
+        </div>
+        <div class="hero-actions">
+          <a class="btn btn-light" href="#products">Voir les produits</a>
+          <a class="btn btn-outline" href="#new">Nouveautés</a>
+        </div>
+      </div>
+      <div class="hero-mark" aria-hidden="true">S</div>
+    </section>
+
+    <section class="catalog-section" id="products">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CATALOGUE</p>
+          <h2>Produits</h2>
+        </div>
+        <div class="live-pill"><i></i> Stock en temps réel</div>
+      </div>
+
+      <div class="toolbar">
+        <label class="search-box">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="Rechercher un produit..." autocomplete="off">
+        </label>
+        <div class="category-scroll" id="categoryFilters" aria-label="Catégories"></div>
+      </div>
+
+      <div class="product-grid" id="productGrid">
+        <div class="loading-state">Chargement du catalogue…</div>
+      </div>
+      <p class="empty-state hidden" id="emptyState">Aucun produit ne correspond à votre recherche.</p>
+    </section>
+
+    <section class="feature-section" id="new">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">DROP RÉCENT</p>
+          <h2>Nouveautés</h2>
+        </div>
+      </div>
+      <div class="product-grid" id="newGrid"></div>
+    </section>
+
+    <section class="feature-section" id="featured">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">SÉLECTION SHOP</p>
+          <h2>Mis en avant</h2>
+        </div>
+      </div>
+      <div class="product-grid" id="featuredGrid"></div>
+    </section>
+
+    <section class="categories-section" id="categories">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">EXPLORE</p>
+          <h2>Catégories</h2>
+        </div>
+      </div>
+      <div class="category-cards" id="categoryCards"></div>
+    </section>
+
+    <section class="contact-section" id="contact">
+      <div class="contact-copy">
+        <p class="eyebrow">COMMANDES</p>
+        <h2>Une question ?</h2>
+        <p>Pour commander ou obtenir une information sur un produit, contacte-moi directement sur Snapchat.</p>
+        <div class="snap-handle">@TONSNAP</div>
+        <p class="shipping">🇫🇷 Expédition dans toute la France.<br>Livraison disponible partout en France.</p>
+      </div>
+      <div class="qr-card">
+        <img src="assets/qr-snap.png" alt="QR code Snapchat">
+        <span>SCANNES POUR CONTACTER SHOP</span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <strong>SHOP</strong>
+    <span>STREETWEAR • RUNNING</span>
+  </footer>
+
+  <dialog class="product-dialog" id="productDialog">
+    <button class="dialog-close" id="dialogClose" aria-label="Fermer">×</button>
+    <div id="dialogContent"></div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module" src="js/shop.js"></script>
+</body>
+</html>
