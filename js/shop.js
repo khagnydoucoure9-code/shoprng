@@ -10,41 +10,50 @@ let searchTerm = "";
 
 const $ = (s) => document.querySelector(s);
 
-const esc = (v="") =>
-String(v).replace(/[&<>"']/g, c => ({
-'&':'&',
-'<':'<',
-'>':'>',
-'"':'"',
-"'":'''
+const esc = (v = "") =>
+String(v).replace(/[&<>"']/g, (c) => ({
+"&": "&",
+"<": "<",
+">": ">",
+'"': """,
+"'": "'"
 }[c]));
 
-const imageUrl = (path) =>
-path
-? (path.startsWith("http")
-? path
-: db.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl)
-: "";
+const imageUrl = (path) => {
+if (!path) return "";
+
+if (path.startsWith("http")) {
+return path;
+}
+
+return db.storage
+.from(STORAGE_BUCKET)
+.getPublicUrl(path)
+.data.publicUrl;
+};
 
 function productSizes(product) {
 return (product.product_sizes || [])
-.filter(s => s.enabled)
-.sort((a,b) =>
-["S","M","L","XL","XXL"].indexOf(a.size) -
-["S","M","L","XL","XXL"].indexOf(b.size)
+.filter((s) => s.enabled)
+.sort(
+(a, b) =>
+["S", "M", "L", "XL", "XXL"].indexOf(a.size) -
+["S", "M", "L", "XL", "XXL"].indexOf(b.size)
 );
 }
 
-function matches(p) {
+function matches(product) {
 const hay = [
-p.name,
-p.description,
-p.categories?.name
-].join(" ").toLowerCase();
+product.name,
+product.description,
+product.categories?.name
+]
+.join(" ")
+.toLowerCase();
 
 return (
 (selectedCategory === "Tous" ||
-p.categories?.name === selectedCategory) &&
+product.categories?.name === selectedCategory) &&
 hay.includes(searchTerm)
 );
 }
@@ -53,41 +62,44 @@ hay.includes(searchTerm)
 CARTE PRODUIT
 ========================= */
 
-function card(p) {
+function card(product) {
+const sizes = productSizes(product);
 
-const sizes = productSizes(p);
+const available = sizes.filter(
+(s) => Number(s.quantity) > 0
+).length;
 
-const available =
-sizes.filter(s => s.quantity > 0).length;
-
-return ` <article class="product-card" data-id="${p.id}"> <div class="product-image">
+return ` <article class="product-card" data-id="${esc(product.id)}">
 
 ```
+  <div class="product-image">
     ${
-      p.image_path
-        ? `<img
-            src="${esc(imageUrl(p.image_path))}"
-            alt="${esc(p.name)}"
-            loading="lazy">`
+      product.image_path
+        ? `
+          <img
+            src="${esc(imageUrl(product.image_path))}"
+            alt="${esc(product.name)}"
+            loading="lazy"
+          >
+        `
         : ""
     }
 
     ${
-      p.is_new
+      product.is_new
         ? `<span class="tag">Nouveau</span>`
         : ""
     }
-
   </div>
 
   <div class="product-info">
 
     <p class="product-name">
-      ${esc(p.name)}
+      ${esc(product.name)}
     </p>
 
     <div class="product-price">
-      ${Number(p.price).toLocaleString("fr-FR")} 🎾
+      ${Number(product.price).toLocaleString("fr-FR")} 🎾
     </div>
 
     <div class="product-meta">
@@ -99,6 +111,7 @@ return ` <article class="product-card" data-id="${p.id}"> <div class="product-im
     </div>
 
   </div>
+
 </article>
 ```
 
@@ -110,42 +123,45 @@ GRILLE
 ========================= */
 
 function renderGrid(id, list) {
+const element = $(id);
 
-const el = $(id);
+if (!element) return;
 
-el.innerHTML =
-list.length
+element.innerHTML = list.length
 ? list.map(card).join("")
 : "";
 
-el.querySelectorAll(".product-card")
-.forEach(c =>
-c.addEventListener(
-"click",
-() => openProduct(c.dataset.id)
-)
-);
+element
+.querySelectorAll(".product-card")
+.forEach((element) => {
+element.addEventListener("click", () => {
+openProduct(element.dataset.id);
+});
+});
 }
 
 function render() {
-
-const filtered =
-products.filter(matches);
+const filtered = products.filter(matches);
 
 renderGrid("#productGrid", filtered);
 
-$("#emptyState")
-.classList
-.toggle("hidden", filtered.length > 0);
+const emptyState = $("#emptyState");
+
+if (emptyState) {
+emptyState.classList.toggle(
+"hidden",
+filtered.length > 0
+);
+}
 
 renderGrid(
 "#newGrid",
-products.filter(p => p.is_new)
+products.filter((p) => p.is_new)
 );
 
 renderGrid(
 "#featuredGrid",
-products.filter(p => p.is_featured)
+products.filter((p) => p.is_featured)
 );
 }
 
@@ -154,55 +170,62 @@ CATEGORIES
 ========================= */
 
 function renderCategories() {
+const categoryFilters = $("#categoryFilters");
+const categoryCards = $("#categoryCards");
+
+if (!categoryFilters || !categoryCards) return;
 
 const names = [
 "Tous",
-...categories.map(c => c.name)
+...categories.map((category) => category.name)
 ];
 
-$("#categoryFilters").innerHTML =
-names.map(n => `       <button
-        class="filter-btn ${n === selectedCategory ? "active" : ""}"
-        data-cat="${esc(n)}">
-        ${esc(n)}       </button>
-    `).join("");
+categoryFilters.innerHTML = names
+.map(
+(name) => `         <button
+          type="button"
+          class="filter-btn ${name === selectedCategory ? "active" : ""}"
+          data-cat="${esc(name)}"         >
+          ${esc(name)}         </button>
+      `
+)
+.join("");
 
-$("#categoryFilters")
+categoryFilters
 .querySelectorAll("button")
-.forEach(b =>
-b.addEventListener("click", () => {
+.forEach((button) => {
+button.addEventListener("click", () => {
+selectedCategory = button.dataset.cat;
 
 ```
-    selectedCategory =
-      b.dataset.cat;
-
     renderCategories();
     render();
-  })
-);
+  });
+});
 ```
 
-$("#categoryCards").innerHTML =
-categories.map(c => `       <a
-        class="category-card"
-        href="#products"
-        data-cat-card="${esc(c.name)}">
-        ${esc(c.name)}       </a>
-    `).join("");
+categoryCards.innerHTML = categories
+.map(
+(category) => `         <a
+          class="category-card"
+          href="#products"
+          data-cat-card="${esc(category.name)}"         >
+          ${esc(category.name)}         </a>
+      `
+)
+.join("");
 
-$("#categoryCards")
+categoryCards
 .querySelectorAll("[data-cat-card]")
-.forEach(b =>
-b.addEventListener("click", () => {
+.forEach((button) => {
+button.addEventListener("click", () => {
+selectedCategory = button.dataset.catCard;
 
 ```
-    selectedCategory =
-      b.dataset.catCard;
-
     renderCategories();
     render();
-  })
-);
+  });
+});
 ```
 
 }
@@ -212,85 +235,80 @@ CHARGEMENT SUPABASE
 ========================= */
 
 async function load() {
-
-const [
-cats,
-prods,
-images
-] = await Promise.all([
+const [categoriesResult, productsResult, imagesResult] =
+await Promise.all([
+db
+.from("categories")
+.select("*")
+.eq("active", true)
+.order("sort_order"),
 
 ```
-db
-  .from("categories")
-  .select("*")
-  .eq("active", true)
-  .order("sort_order"),
+  db
+    .from("products")
+    .select("*, categories(name), product_sizes(*)")
+    .eq("active", true)
+    .order("created_at", {
+      ascending: false
+    }),
 
-db
-  .from("products")
-  .select("*, categories(name), product_sizes(*)")
-  .eq("active", true)
-  .order("created_at", {
-    ascending:false
-  }),
-
-db
-  .from("product_images")
-  .select("*")
-  .order("sort_order")
-```
-
+  db
+    .from("product_images")
+    .select("*")
+    .order("sort_order")
 ]);
+```
 
 if (
-cats.error ||
-prods.error ||
-images.error
+categoriesResult.error ||
+productsResult.error ||
+imagesResult.error
 ) {
-
-```
 console.error(
-  cats.error ||
-  prods.error ||
-  images.error
+categoriesResult.error ||
+productsResult.error ||
+imagesResult.error
 );
 
-$("#productGrid").innerHTML = `
-  <div class="loading-state">
-    Configurez Supabase dans
-    <code>js/config.js</code>.
-  </div>
-`;
+```
+const productGrid = $("#productGrid");
+
+if (productGrid) {
+  productGrid.innerHTML = `
+    <div class="loading-state">
+      Erreur de chargement des produits.
+    </div>
+  `;
+}
 
 return;
 ```
 
 }
 
-categories =
-cats.data || [];
+categories = categoriesResult.data || [];
 
-const imageRows =
-images.data || [];
+const imageRows = imagesResult.data || [];
 
-products =
-(prods.data || []).map(product => ({
+products = (productsResult.data || []).map(
+(product) => ({
+...product,
 
 ```
-  ...product,
-
-  gallery:
-    imageRows
-      .filter(img =>
-        img.product_id === product.id
-      )
-      .sort((a,b) =>
+  gallery: imageRows
+    .filter(
+      (image) =>
+        image.product_id === product.id
+    )
+    .sort(
+      (a, b) =>
         Number(a.sort_order || 0) -
         Number(b.sort_order || 0)
-      )
-
-}));
+    )
+})
 ```
+
+);
 
 renderCategories();
 render();
@@ -305,63 +323,47 @@ GALERIE PRODUIT
 ========================= */
 
 function openProduct(id) {
+const product = products.find(
+(item) => item.id === id
+);
 
-const p =
-products.find(x => x.id === id);
-
-if (!p) return;
-
-/*
-On prend l'image principale du produit
-puis les images supplémentaires.
-*/
+if (!product) return;
 
 const gallery = [];
 
-if (p.image_path) {
+/* Image principale */
 
-```
+if (product.image_path) {
 gallery.push({
-  image_path:p.image_path
+image_path: product.image_path
 });
-```
-
 }
 
-for (const image of (p.gallery || [])) {
+/* Images supplémentaires */
 
-```
-/*
-  Évite d'afficher deux fois
-  la même image.
-*/
-
+for (const image of product.gallery || []) {
 if (
-  image.image_path &&
-  !gallery.some(
-    x => x.image_path === image.image_path
-  )
+image.image_path &&
+!gallery.some(
+(item) =>
+item.image_path === image.image_path
+)
 ) {
-
-  gallery.push(image);
+gallery.push(image);
 }
-```
-
 }
 
-const firstImage =
-gallery.length
+const firstImage = gallery.length
 ? imageUrl(gallery[0].image_path)
 : "";
 
-$("#dialogContent").innerHTML = `
+const dialogContent = $("#dialogContent");
+
+if (!dialogContent) return;
+
+dialogContent.innerHTML = ` <div class="dialog-product">
 
 ```
-<div class="dialog-product">
-
-
-  <!-- GALERIE -->
-
   <div class="product-gallery">
 
     <div class="gallery-main">
@@ -372,7 +374,8 @@ $("#dialogContent").innerHTML = `
             <img
               id="galleryMainImage"
               src="${esc(firstImage)}"
-              alt="${esc(p.name)}">
+              alt="${esc(product.name)}"
+            >
           `
           : `
             <div class="gallery-empty">
@@ -383,26 +386,37 @@ $("#dialogContent").innerHTML = `
 
     </div>
 
-
     ${
       gallery.length > 1
         ? `
           <div class="gallery-thumbs">
 
-            ${gallery.map((image,index) => `
-
-              <button
-                type="button"
-                class="gallery-thumb ${index === 0 ? "active" : ""}"
-                data-gallery-index="${index}">
-
-                <img
-                  src="${esc(imageUrl(image.image_path))}"
-                  alt="${esc(p.name)}">
-
-              </button>
-
-            `).join("")}
+            ${gallery
+              .map(
+                (image, index) => `
+                  <button
+                    type="button"
+                    class="gallery-thumb ${
+                      index === 0
+                        ? "active"
+                        : ""
+                    }"
+                    data-gallery-index="${index}"
+                  >
+                    <img
+                      src="${esc(
+                        imageUrl(
+                          image.image_path
+                        )
+                      )}"
+                      alt="${esc(
+                        product.name
+                      )}"
+                    >
+                  </button>
+                `
+              )
+              .join("")}
 
           </div>
         `
@@ -411,66 +425,72 @@ $("#dialogContent").innerHTML = `
 
   </div>
 
-
-  <!-- INFORMATIONS -->
-
   <div class="dialog-copy">
 
     ${
-      p.is_new
+      product.is_new
         ? `<p class="eyebrow">NOUVEAU</p>`
         : ""
     }
 
     <h2>
-      ${esc(p.name)}
+      ${esc(product.name)}
     </h2>
 
     <div class="dialog-price">
-      ${Number(p.price).toLocaleString("fr-FR")} 🎾
+      ${Number(product.price).toLocaleString(
+        "fr-FR"
+      )} 🎾
     </div>
 
     <p class="dialog-desc">
-      ${esc(p.description || "")}
+      ${esc(product.description || "")}
     </p>
-
 
     <div class="sizes">
 
-      ${
-        productSizes(p)
-          .map(s => `
+      ${productSizes(product)
+        .map(
+          (size) => `
             <div class="size-row">
 
               <strong>
-                ${esc(s.size)}
+                ${esc(size.size)}
               </strong>
 
               <span
-                class="${s.quantity > 0 ? "available" : "soldout"}">
-
+                class="${
+                  Number(size.quantity) > 0
+                    ? "available"
+                    : "soldout"
+                }"
+              >
                 ${
-                  s.quantity > 0
-                    ? `${s.quantity} disponible${s.quantity > 1 ? "s" : ""}`
+                  Number(size.quantity) > 0
+                    ? `${Number(
+                        size.quantity
+                      )} disponible${
+                        Number(
+                          size.quantity
+                        ) > 1
+                          ? "s"
+                          : ""
+                      }`
                     : "Rupture"
                 }
-
               </span>
 
             </div>
-          `)
-          .join("")
-      }
+          `
+        )
+        .join("")}
 
     </div>
 
-
     <div class="order-note">
-
       Pour commander :
       contacte-moi directement sur Snapchat —
       ${esc(SNAP_USERNAME)}
-
     </div>
 
   </div>
@@ -480,129 +500,138 @@ $("#dialogContent").innerHTML = `
 
 `;
 
-/*
-Gestion des miniatures
-*/
+/* Miniatures */
 
 const mainImage =
 $("#galleryMainImage");
 
 document
 .querySelectorAll(".gallery-thumb")
-.forEach(button => {
+.forEach((button) => {
+button.addEventListener("click", () => {
+const index = Number(
+button.dataset.galleryIndex
+);
 
 ```
-  button.addEventListener("click", () => {
-
-    const index =
-      Number(
-        button.dataset.galleryIndex
-      );
-
-    if (
-      gallery[index] &&
-      mainImage
-    ) {
-
-      mainImage.src =
-        imageUrl(
-          gallery[index].image_path
-        );
-
-      document
-        .querySelectorAll(".gallery-thumb")
-        .forEach(b =>
-          b.classList.remove("active")
-        );
-
-      button.classList.add("active");
+    if (!gallery[index] || !mainImage) {
+      return;
     }
 
-  });
+    mainImage.src = imageUrl(
+      gallery[index].image_path
+    );
 
+    document
+      .querySelectorAll(".gallery-thumb")
+      .forEach((item) => {
+        item.classList.remove("active");
+      });
+
+    button.classList.add("active");
+  });
 });
 ```
 
-$("#productDialog").showModal();
+const productDialog = $("#productDialog");
+
+if (productDialog) {
+productDialog.showModal();
+}
 }
 
 /* =========================
-FERMETURE
+FERMETURE DIALOGUE
 ========================= */
 
-$("#dialogClose")
-.addEventListener(
-"click",
-() => $("#productDialog").close()
-);
+const dialogClose = $("#dialogClose");
+
+if (dialogClose) {
+dialogClose.addEventListener("click", () => {
+$("#productDialog")?.close();
+});
+}
 
 /* =========================
 RECHERCHE
 ========================= */
 
-$("#searchInput")
-.addEventListener("input", e => {
+const searchInput = $("#searchInput");
+
+if (searchInput) {
+searchInput.addEventListener(
+"input",
+(event) => {
+searchTerm = event.target.value
+.trim()
+.toLowerCase();
 
 ```
-searchTerm =
-  e.target.value
-    .trim()
-    .toLowerCase();
-
-render();
+  render();
+}
 ```
 
-});
+);
+}
 
-$("#searchTrigger")
-.addEventListener("click", () => {
+const searchTrigger = $("#searchTrigger");
 
-```
-$("#searchInput").focus();
-
+if (searchTrigger) {
+searchTrigger.addEventListener(
+"click",
+() => {
+searchInput?.focus();
 location.hash = "products";
-```
-
-});
+}
+);
+}
 
 /* =========================
 MENU MOBILE
 ========================= */
 
-document
-.querySelector(".menu-toggle")
-.addEventListener("click", e => {
+const menuToggle =
+document.querySelector(".menu-toggle");
 
-```
+if (menuToggle) {
+menuToggle.addEventListener(
+"click",
+(event) => {
 const nav =
-  document.querySelector(".main-nav");
+document.querySelector(".main-nav");
 
-nav.classList.toggle("open");
+```
+  if (!nav) return;
 
-e.currentTarget.setAttribute(
-  "aria-expanded",
-  nav.classList.contains("open")
-);
+  nav.classList.toggle("open");
+
+  event.currentTarget.setAttribute(
+    "aria-expanded",
+    nav.classList.contains("open")
+  );
+}
 ```
 
-});
+);
+}
 
 document
 .querySelectorAll(".main-nav a")
-.forEach(a =>
-a.addEventListener(
-"click",
-() =>
+.forEach((link) => {
+link.addEventListener("click", () => {
 document
 .querySelector(".main-nav")
-.classList.remove("open")
-)
-);
+?.classList.remove("open");
+});
+});
 
-document
-.querySelector(".snap-handle")
-.textContent =
+const snapHandle =
+document.querySelector(".snap-handle");
+
+if (snapHandle) {
+snapHandle.textContent =
 SNAP_USERNAME;
+}
 
 /* =========================
 REALTIME
@@ -613,9 +642,9 @@ db.channel("shop-live")
 .on(
 "postgres_changes",
 {
-event:"*",
-schema:"public",
-table:"products"
+event: "*",
+schema: "public",
+table: "products"
 },
 load
 )
@@ -623,9 +652,9 @@ load
 .on(
 "postgres_changes",
 {
-event:"*",
-schema:"public",
-table:"product_sizes"
+event: "*",
+schema: "public",
+table: "product_sizes"
 },
 load
 )
@@ -633,9 +662,9 @@ load
 .on(
 "postgres_changes",
 {
-event:"*",
-schema:"public",
-table:"categories"
+event: "*",
+schema: "public",
+table: "categories"
 },
 load
 )
@@ -643,13 +672,17 @@ load
 .on(
 "postgres_changes",
 {
-event:"*",
-schema:"public",
-table:"product_images"
+event: "*",
+schema: "public",
+table: "product_images"
 },
 load
 )
 
 .subscribe();
+
+/* =========================
+DÉMARRAGE
+========================= */
 
 load();
