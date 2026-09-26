@@ -17,3 +17,109 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:poi
 .product-dialog{width:min(900px,94vw);max-height:90vh;border:1px solid #333;border-radius:28px;background:#111;color:#fff;padding:0;overflow:auto}.product-dialog::backdrop{background:rgba(0,0,0,.75);backdrop-filter:blur(8px)}.dialog-close{position:sticky;top:14px;float:right;z-index:2;margin:0 14px -42px 0;width:38px;height:38px;border:1px solid #444;border-radius:50%;background:#151515;color:#fff;font-size:1.5rem}.dialog-product{display:grid;grid-template-columns:1fr 1fr}.dialog-product img{width:100%;height:100%;min-height:480px;object-fit:cover}.dialog-copy{padding:50px 34px}.dialog-copy h2{font-size:2.2rem;letter-spacing:-.06em;margin:0 0 8px}.dialog-price{font-size:1.4rem;font-weight:900;margin-bottom:24px}.dialog-desc{color:#aaa}.sizes{display:flex;flex-direction:column;gap:8px;margin:25px 0}.size-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px}.available{color:var(--success)}.soldout{color:var(--danger)}.order-note{border-top:1px solid var(--line);padding-top:20px;font-weight:700}
 @media(max-width:900px){.product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.category-cards{grid-template-columns:repeat(2,1fr)}.hero{grid-template-columns:1fr}.hero-mark{display:none}.contact-section{grid-template-columns:1fr 210px}}
 @media(max-width:680px){.site-header{height:64px}.menu-toggle{display:block;order:2}.search-trigger{order:3}.main-nav{position:absolute;top:64px;left:0;right:0;display:none;flex-direction:column;padding:18px 5vw;background:#0b0b0b;border-bottom:1px solid var(--line)}.main-nav.open{display:flex}.hero{min-height:auto;padding-top:90px;padding-bottom:70px}.hero h1{font-size:clamp(5rem,25vw,8rem)}.hero-badges{flex-direction:column;align-items:flex-start}.catalog-section,.feature-section,.categories-section{padding-top:65px;padding-bottom:65px}.section-heading{align-items:start;flex-direction:column}.toolbar{align-items:stretch;flex-direction:column}.search-box{flex-basis:auto;min-width:0;width:100%}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.product-info{padding:12px}.product-name{font-size:.86rem}.product-price{font-size:.9rem}.contact-section{margin:20px 4vw 60px;padding:40px 24px;grid-template-columns:1fr}.qr-card{width:190px}.site-footer{padding:30px 5vw;flex-direction:column;gap:10px}.dialog-product{grid-template-columns:1fr}.dialog-product img{min-height:300px;max-height:55vh}.dialog-copy{padding:28px 22px}}
+/* =========================
+   GALERIE PRODUIT
+========================= */
+
+.product-gallery {
+  width: 100%;
+  min-width: 0;
+}
+
+.gallery-main {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f3f3f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-empty {
+  color: #777;
+  font-size: 14px;
+}
+
+.gallery-thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.gallery-thumb {
+  flex: 0 0 70px;
+  width: 70px;
+  height: 70px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f3f3f3;
+  cursor: pointer;
+}
+
+.gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-thumb.active {
+  border-color: #111;
+}
+
+.gallery-thumb:hover {
+  opacity: 0.8;
+}
+
+
+/* =========================
+   FENÊTRE PRODUIT
+========================= */
+
+.dialog-product {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.dialog-product > div {
+  min-width: 0;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+  .dialog-product {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .gallery-main {
+    max-height: 70vh;
+  }
+
+  .gallery-thumb {
+    flex-basis: 60px;
+    width: 60px;
+    height: 60px;
+  }
+
+}
