@@ -2,11 +2,14 @@
 
 <html lang="fr">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SHOP — Administration</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
 <link rel="stylesheet" href="../css/style.css">
 
 <style>
@@ -16,7 +19,7 @@
 .admin-main{max-width:1250px;margin:auto;padding:35px 22px}
 .admin-title{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:24px}
 .admin-title h1{font-size:2.7rem;letter-spacing:-.07em;margin:0}
-.admin-btn{border:1px solid #ccc;background:#fff;padding:11px 15px;border-radius:10px;font-weight:800}
+.admin-btn{border:1px solid #ccc;background:#fff;padding:11px 15px;border-radius:10px;font-weight:800;cursor:pointer}
 .admin-btn.dark{background:#111;color:#fff;border-color:#111}
 .admin-btn.danger{color:#b4232c}
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:28px}
@@ -42,7 +45,6 @@
 .check-row{display:flex!important;flex-direction:row!important;gap:15px!important;align-items:center}
 .sizes-admin{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
-.preview{width:90px;height:90px;object-fit:cover;border-radius:10px;background:#eee}
 .login{max-width:420px;margin:12vh auto;background:#fff;border:1px solid #ddd;border-radius:20px;padding:30px}
 .login h1{letter-spacing:-.07em;font-size:2.5rem}
 .login form{display:flex;flex-direction:column;gap:12px}
@@ -76,7 +78,7 @@
   <form id="loginForm">
     <input id="email" type="email" placeholder="Email" required>
     <input id="password" type="password" placeholder="Mot de passe" required>
-    <button class="admin-btn dark">Se connecter</button>
+    <button type="submit" class="admin-btn dark">Se connecter</button>
   </form>
 
   <p id="loginError" class="notice"></p>
@@ -107,11 +109,33 @@
   </div>
 
   <section class="stats">
-    <div class="stat"><b id="statProducts">0</b><span>Produits actifs</span></div>
-    <div class="stat"><b id="statStock">0</b><span>Articles en stock</span></div>
-    <div class="stat"><b id="statOut">0</b><span>Produits en rupture</span></div>
-    <div class="stat"><b id="statNew">0</b><span>Nouveautés</span></div>
-    <div class="stat"><b id="statFeatured">0</b><span>Mis en avant</span></div>
+    <div class="stat">
+      <b id="statProducts">0</b>
+      <span>Produits actifs</span>
+    </div>
+
+```
+<div class="stat">
+  <b id="statStock">0</b>
+  <span>Articles en stock</span>
+</div>
+
+<div class="stat">
+  <b id="statOut">0</b>
+  <span>Produits en rupture</span>
+</div>
+
+<div class="stat">
+  <b id="statNew">0</b>
+  <span>Nouveautés</span>
+</div>
+
+<div class="stat">
+  <b id="statFeatured">0</b>
+  <span>Mis en avant</span>
+</div>
+```
+
   </section>
 
   <section class="admin-panel">
@@ -133,7 +157,6 @@
 
 <div style="overflow:auto">
   <table class="admin-table">
-
     <thead>
       <tr>
         <th>Produit</th>
@@ -146,7 +169,6 @@
     </thead>
 
     <tbody id="adminProducts"></tbody>
-
   </table>
 </div>
 ```
@@ -164,6 +186,7 @@
 
 <div class="admin-toolbar">
   <input id="newCategory" placeholder="Nouvelle catégorie">
+
   <button id="createCategory" class="admin-btn dark">
     Ajouter
   </button>
@@ -177,146 +200,127 @@
 </main>
 </div>
 
-<!-- PRODUIT -->
-
 <dialog id="productModal" class="modal">
 
-<div class="modal-inner">
-
-  <h2 id="modalTitle">Ajouter un produit</h2>
-
-  <form id="productForm" class="form-grid">
+  <div class="modal-inner">
 
 ```
-<input type="hidden" id="productId">
+<h2 id="modalTitle">Ajouter un produit</h2>
 
-<label>
-  Nom
-  <input id="pName" required>
-</label>
+<form id="productForm" class="form-grid">
 
-<label>
-  Prix
-  <input id="pPrice" type="number" step="0.01" min="0" required>
-</label>
+  <input type="hidden" id="productId">
 
-<label>
-  Catégorie
-  <select id="pCategory" required></select>
-</label>
+  <label>
+    Nom
+    <input id="pName" required>
+  </label>
 
-<!-- PLUSIEURS IMAGES -->
-<label>
-  Images du produit
-  <input
-    id="pImage"
-    type="file"
-    accept=".jpg,.jpeg,.png,.webp"
-    multiple
-  >
-  <span class="notice">
-    Tu peux sélectionner plusieurs images.
-  </span>
-</label>
+  <label>
+    Prix
+    <input id="pPrice" type="number" step="0.01" min="0" required>
+  </label>
 
-<label class="full">
-  Description
-  <textarea id="pDescription" rows="4"></textarea>
-</label>
+  <label>
+    Catégorie
+    <select id="pCategory" required></select>
+  </label>
 
-<div class="full">
+  <label>
+    Images du produit
+    <input
+      id="pImage"
+      type="file"
+      accept=".jpg,.jpeg,.png,.webp"
+      multiple
+    >
+    <span class="notice">
+      Tu peux sélectionner plusieurs images.
+    </span>
+  </label>
 
-  <label>Tailles et quantités</label>
+  <label class="full">
+    Description
+    <textarea id="pDescription" rows="4"></textarea>
+  </label>
 
-  <div
-    class="sizes-admin"
-    id="sizeInputs">
+  <div class="full">
+    <label>Tailles et quantités</label>
+    <div class="sizes-admin" id="sizeInputs"></div>
   </div>
 
-</div>
+  <label class="check-row">
+    <input id="pActive" type="checkbox" checked>
+    Produit actif
+  </label>
 
-<label class="check-row">
-  <input id="pActive" type="checkbox" checked>
-  Produit actif
-</label>
+  <label class="check-row">
+    <input id="pNew" type="checkbox">
+    Nouveau
+  </label>
 
-<label class="check-row">
-  <input id="pNew" type="checkbox">
-  Nouveau
-</label>
+  <label class="check-row">
+    <input id="pFeatured" type="checkbox">
+    Produit mis en avant
+  </label>
 
-<label class="check-row">
-  <input id="pFeatured" type="checkbox">
-  Produit mis en avant
-</label>
+  <div class="full">
+    <p class="notice">
+      Laissez une taille désactivée si elle n'existe pas pour ce produit.
+    </p>
+  </div>
 
-<div class="full">
-  <p class="notice">
-    Laissez une taille désactivée si elle n'existe pas pour ce produit.
-  </p>
-</div>
+  <div class="form-actions full">
 
-<div class="form-actions full">
+    <button type="button" id="cancelModal" class="admin-btn">
+      Annuler
+    </button>
 
-  <button
-    type="button"
-    id="cancelModal"
-    class="admin-btn">
-    Annuler
-  </button>
+    <button type="submit" class="admin-btn dark">
+      Enregistrer
+    </button>
 
-  <button
-    class="admin-btn dark">
-    Enregistrer
-  </button>
+  </div>
 
-</div>
+</form>
 ```
 
-  </form>
-
-</div>
+  </div>
 
 </dialog>
 
-<!-- CATEGORIE -->
-
 <dialog id="categoryModal" class="modal">
 
-<div class="modal-inner">
-
-  <h2>Modifier la catégorie</h2>
-
-  <form id="categoryForm">
+  <div class="modal-inner">
 
 ```
-<input type="hidden" id="categoryId">
+<h2>Modifier la catégorie</h2>
 
-<label>
-  Nom
-  <input id="categoryName" required>
-</label>
+<form id="categoryForm">
 
-<div class="form-actions">
+  <input type="hidden" id="categoryId">
 
-  <button
-    type="button"
-    id="cancelCategory"
-    class="admin-btn">
-    Annuler
-  </button>
+  <label>
+    Nom
+    <input id="categoryName" required>
+  </label>
 
-  <button
-    class="admin-btn dark">
-    Enregistrer
-  </button>
+  <div class="form-actions">
 
-</div>
+    <button type="button" id="cancelCategory" class="admin-btn">
+      Annuler
+    </button>
+
+    <button type="submit" class="admin-btn dark">
+      Enregistrer
+    </button>
+
+  </div>
+
+</form>
 ```
 
-  </form>
-
-</div>
+  </div>
 
 </dialog>
 
@@ -324,10 +328,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script
-  type="module"
-  src="../js/admin.js">
-</script>
+<script type="module" src="../js/admin.js"></script>
 
 </body>
 </html>
