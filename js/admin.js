@@ -85,9 +85,7 @@ const productsResult = await db
 
 if (categoriesResult.error || productsResult.error) {
 toast("Erreur de chargement");
-console.error(
-categoriesResult.error || productsResult.error
-);
+console.error(categoriesResult.error || productsResult.error);
 return;
 }
 
@@ -101,8 +99,7 @@ function totalStock(product) {
 return (product.product_sizes || [])
 .filter((size) => size.enabled)
 .reduce(
-(total, size) =>
-total + Number(size.quantity || 0),
+(total, size) => total + Number(size.quantity || 0),
 0
 );
 }
@@ -115,34 +112,30 @@ const statNew = $("#statNew");
 const statFeatured = $("#statFeatured");
 
 if (statProducts) {
-statProducts.textContent =
-products.filter((p) => p.active).length;
+statProducts.textContent = products.filter((p) => p.active).length;
 }
 
 if (statStock) {
-statStock.textContent =
-products.reduce(
-(total, product) =>
-total + totalStock(product),
+statStock.textContent = products.reduce(
+(total, product) => total + totalStock(product),
 0
 );
 }
 
 if (statOut) {
-statOut.textContent =
-products.filter(
+statOut.textContent = products.filter(
 (product) => totalStock(product) === 0
 ).length;
 }
 
 if (statNew) {
-statNew.textContent =
-products.filter((p) => p.is_new).length;
+statNew.textContent = products.filter((p) => p.is_new).length;
 }
 
 if (statFeatured) {
-statFeatured.textContent =
-products.filter((p) => p.is_featured).length;
+statFeatured.textContent = products.filter(
+(p) => p.is_featured
+).length;
 }
 
 const adminCategory = $("#adminCategory");
@@ -161,8 +154,7 @@ categories
 const productCategory = $("#pCategory");
 
 if (productCategory) {
-productCategory.innerHTML =
-categories
+productCategory.innerHTML = categories
 .map(
 (category) =>
 `<option value="${esc(category.id)}">${esc(category.name)}</option>`
@@ -200,8 +192,7 @@ const matchesSearch =
   !search || text.includes(search);
 
 const matchesCategory =
-  !category ||
-  product.category_id === category;
+  !category || product.category_id === category;
 
 const matchesStock =
   !stock ||
@@ -223,57 +214,56 @@ return (
 const adminProducts = $("#adminProducts");
 
 if (adminProducts) {
-adminProducts.innerHTML =
-list
+adminProducts.innerHTML = list
 .map(
 (product) => ` <tr> <td> <strong>${esc(product.name)}</strong> </td>
 
 ```
-          <td>
-            ${Number(product.price).toLocaleString("fr-FR")} 🎾
-          </td>
+        <td>
+          ${Number(product.price).toLocaleString("fr-FR")} 🎾
+        </td>
 
-          <td>
-            ${esc(product.categories?.name || "—")}
-          </td>
+        <td>
+          ${esc(product.categories?.name || "—")}
+        </td>
 
-          <td>
-            <div class="stock-mini">
-              ${
-                (product.product_sizes || [])
-                  .filter((size) => size.enabled)
-                  .map(
-                    (size) =>
-                      `<span>${esc(size.size)}: ${Number(size.quantity)}</span>`
-                  )
-                  .join("") || "—"
-              }
-            </div>
-          </td>
+        <td>
+          <div class="stock-mini">
+            ${
+              (product.product_sizes || [])
+                .filter((size) => size.enabled)
+                .map(
+                  (size) =>
+                    `<span>${esc(size.size)}: ${Number(size.quantity)}</span>`
+                )
+                .join("") || "—"
+            }
+          </div>
+        </td>
 
-          <td>
-            ${product.active ? "Actif" : "Masqué"}
-            ${product.is_new ? " · Nouveau" : ""}
-            ${product.is_featured ? " · ⭐" : ""}
-          </td>
+        <td>
+          ${product.active ? "Actif" : "Masqué"}
+          ${product.is_new ? " · Nouveau" : ""}
+          ${product.is_featured ? " · ⭐" : ""}
+        </td>
 
-          <td>
-            <button
-              class="admin-btn"
-              data-edit="${esc(product.id)}">
-              Modifier
-            </button>
+        <td>
+          <button
+            class="admin-btn"
+            data-edit="${esc(product.id)}">
+            Modifier
+          </button>
 
-            <button
-              class="admin-btn danger"
-              data-del="${esc(product.id)}">
-              Supprimer
-            </button>
-          </td>
-        </tr>
-      `
-    )
-    .join("");
+          <button
+            class="admin-btn danger"
+            data-del="${esc(product.id)}">
+            Supprimer
+          </button>
+        </td>
+      </tr>
+    `
+  )
+  .join("");
 ```
 
 }
@@ -281,25 +271,24 @@ list
 const categoryList = $("#categoryAdminList");
 
 if (categoryList) {
-categoryList.innerHTML =
-categories
+categoryList.innerHTML = categories
 .map(
 (category) => ` <div
-           style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee">
+         style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee">
 
 ```
-          <span>${esc(category.name)}</span>
+        <span>${esc(category.name)}</span>
 
-          <button
-            class="admin-btn"
-            data-cat-edit="${esc(category.id)}">
-            Modifier
-          </button>
+        <button
+          class="admin-btn"
+          data-cat-edit="${esc(category.id)}">
+          Modifier
+        </button>
 
-        </div>
-      `
-    )
-    .join("");
+      </div>
+    `
+  )
+  .join("");
 ```
 
 }
@@ -328,8 +317,7 @@ openCategory(button.dataset.catEdit);
 
 function resetForm() {
 $("#productId").value = "";
-$("#modalTitle").textContent =
-"Ajouter un produit";
+$("#modalTitle").textContent = "Ajouter un produit";
 
 $("#pName").value = "";
 $("#pPrice").value = "";
@@ -341,29 +329,23 @@ $("#pActive").checked = true;
 $("#pNew").checked = false;
 $("#pFeatured").checked = false;
 
-$("#sizeInputs").innerHTML =
-sizes
+$("#sizeInputs").innerHTML = sizes
 .map(
-(size) => ` <label style="font-size:.7rem">
+(size) => ` <label style="font-size:.7rem"> <span> <input
+           type="checkbox"
+           data-enabled="${size}">
+${size} </span>
 
 ```
-        <span>
-          <input
-            type="checkbox"
-            data-enabled="${size}">
-          ${size}
-        </span>
-
-        <input
-          type="number"
-          min="0"
-          value="0"
-          data-qty="${size}">
-
-      </label>
-    `
-  )
-  .join("");
+      <input
+        type="number"
+        min="0"
+        value="0"
+        data-qty="${size}">
+    </label>
+  `
+)
+.join("");
 ```
 
 }
@@ -372,8 +354,7 @@ async function openProduct(id = null) {
 resetForm();
 
 if (id) {
-const product =
-products.find(
+const product = products.find(
 (item) => item.id === id
 );
 
@@ -383,18 +364,11 @@ if (!product) return;
 $("#modalTitle").textContent =
   "Modifier le produit";
 
-$("#productId").value =
-  product.id;
-
-$("#pName").value =
-  product.name;
-
-$("#pPrice").value =
-  product.price;
-
+$("#productId").value = product.id;
+$("#pName").value = product.name;
+$("#pPrice").value = product.price;
 $("#pDescription").value =
   product.description || "";
-
 $("#pCategory").value =
   product.category_id || "";
 
@@ -407,11 +381,7 @@ $("#pNew").checked =
 $("#pFeatured").checked =
   !!product.is_featured;
 
-for (
-  const size of (
-    product.product_sizes || []
-  )
-) {
+for (const size of product.product_sizes || []) {
   const enabled =
     $(`[data-enabled="${size.size}"]`);
 
@@ -419,8 +389,7 @@ for (
     $(`[data-qty="${size.size}"]`);
 
   if (enabled) {
-    enabled.checked =
-      !!size.enabled;
+    enabled.checked = !!size.enabled;
   }
 
   if (quantity) {
@@ -439,18 +408,12 @@ async function uploadImage(file, productId) {
 if (!file) return null;
 
 const extension =
-file.name
-.split(".")
-.pop()
-.toLowerCase();
+file.name.split(".").pop().toLowerCase();
 
 if (
-![
-"jpg",
-"jpeg",
-"png",
-"webp"
-].includes(extension)
+!["jpg", "jpeg", "png", "webp"].includes(
+extension
+)
 ) {
 throw new Error(
 "Format image non accepté"
@@ -472,9 +435,7 @@ contentType: file.type
 }
 );
 
-if (error) {
-throw error;
-}
+if (error) throw error;
 
 return path;
 }
@@ -492,10 +453,8 @@ try {
 
   const payload = {
     id: productId,
-    name:
-      $("#pName").value.trim(),
-    price:
-      Number($("#pPrice").value),
+    name: $("#pName").value.trim(),
+    price: Number($("#pPrice").value),
     description:
       $("#pDescription").value.trim(),
     category_id:
@@ -510,31 +469,24 @@ try {
 
   const files =
     Array.from(
-      $("#pImage").files
+      $("#pImage").files || []
     );
 
-  let uploadedImages = [];
+  const uploadedImages = [];
 
-  if (files.length > 0) {
-    for (
-      let i = 0;
-      i < files.length;
-      i++
-    ) {
-      const path =
-        await uploadImage(
-          files[i],
-          productId
-        );
+  for (const file of files) {
+    const path =
+      await uploadImage(
+        file,
+        productId
+      );
 
-      uploadedImages.push({
-        path,
-        sort_order: i
-      });
-    }
+    uploadedImages.push(path);
+  }
 
+  if (uploadedImages.length > 0) {
     payload.image_path =
-      uploadedImages[0].path;
+      uploadedImages[0];
   }
 
   let result;
@@ -557,22 +509,19 @@ try {
   }
 
   if (uploadedImages.length > 0) {
-    const imagesRows =
+    const imageRows =
       uploadedImages.map(
-        (image) => ({
-          product_id:
-            productId,
-          image_path:
-            image.path,
-          sort_order:
-            image.sort_order
+        (path, index) => ({
+          product_id: productId,
+          image_path: path,
+          sort_order: index
         })
       );
 
     const imagesResult =
       await db
         .from("product_images")
-        .insert(imagesRows);
+        .insert(imageRows);
 
     if (imagesResult.error) {
       throw imagesResult.error;
@@ -581,8 +530,7 @@ try {
 
   const stockRows =
     sizes.map((size) => ({
-      product_id:
-        productId,
+      product_id: productId,
       size,
       enabled:
         $(`[data-enabled="${size}"]`)
@@ -686,13 +634,10 @@ $("#loginError").textContent = "";
 const {
   data,
   error
-} =
-  await db.auth.signInWithPassword({
-    email:
-      $("#email").value,
-    password:
-      $("#password").value
-  });
+} = await db.auth.signInWithPassword({
+  email: $("#email").value,
+  password: $("#password").value
+});
 
 if (error) {
   $("#loginError").textContent =
